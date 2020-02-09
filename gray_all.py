@@ -2,12 +2,12 @@ from PIL import Image
 import numpy as np
 import cv2
 
-file_path = "dataset_1/"
-file_processed_dataset = "dataset_prova/"
+file_path = "new_dataset/"
+file_processed_dataset = "new_dataset_p/"
 
 def readData():
 
-    with open(file_path+"/test.txt", "r") as f:
+    with open(file_path+"test.txt", "r") as f:
         for line in f:
 
             name = line.strip().split('.')

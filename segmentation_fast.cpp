@@ -8,7 +8,6 @@
 
 int main(int argc, char **argv)
 {
-
     if (argc < 1)
     {
         std::cerr << "dataset folder path expected!" << std::endl;
@@ -75,6 +74,7 @@ int main(int argc, char **argv)
                 pointC = source_i->at(i, j);
                 if ((std::isnan(pointC.x)) || (std::isnan(pointC.y)) || (std::isnan(pointC.z)))
                 {
+
                     for (int ii = i - 2; ii < i + 2; ii++)
                     {
                         for (int jj = j - 2; jj < j + 2; jj++)
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
 
         Eigen::Vector3f x0;
         Eigen::Vector3f n(coefficients->values[0], coefficients->values[1], coefficients->values[2]);
-        float p = 0.8 * coefficients->values[3];
+        float p = coefficients->values[3];
         float distance;
 
         for (int i = 0; i < source_i->size(); i++)
@@ -129,9 +129,41 @@ int main(int argc, char **argv)
                 distance = n.dot(x0) + p;
 
                 if (distance > 0)
-                    source_i->points[i].z = -p * 2;
+                    source_i->points[i].z = -p;
+            }
+            else
+            {
+                source_i->points[i].z = -p;
+                source_i->points[i].x = 0;
+                source_i->points[i].y = 0;
             }
         }
+
+        // -- GROUND PLANE UPDATE-------------------------------------------------------------
+        pcl::ModelCoefficients::Ptr coefficientsUp(new pcl::ModelCoefficients());
+        pcl::PointIndices::Ptr inliersUp(new pcl::PointIndices());
+        pcl::SACSegmentation<pcl::PointXYZI> seg2;
+        seg2.setOptimizeCoefficients(true);
+        seg2.setModelType(pcl::SACMODEL_PLANE);
+        seg2.setMethodType(pcl::SAC_RANSAC);
+        seg2.setMaxIterations(1000);
+        seg2.setDistanceThreshold(0.01);
+
+        seg2.setInputCloud(source_i);
+        seg2.segment(*inliersUp, *coefficientsUp);
+
+        if (inliersUp->indices.size() == 0)
+            std::cerr << "Could not estimate a planar model for the given dataset." << std::endl;
+
+        for (int k = 0; k < inliersUp->indices.size(); k++)
+            source_i->points[inliersUp->indices[k]].intensity = 1;
+
+        for (int i = 0; i < source_i->size(); i++)
+        {
+            if (source_i->points[i].intensity != 1)
+                source_i->points[i].z = 0;
+        }
+
         std::cout << str + " computed!" << std::endl;
         pcl::copyPointCloud(*source_i, *source);
 

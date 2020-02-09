@@ -6,7 +6,7 @@ from PIL import Image
 import numpy as np
 import cv2
 
-file_path = "dataset_prova/"
+file_path = "new_dataset_p/"
 
 def readData():
     with open(file_path+"test.txt", "r") as f:
@@ -21,7 +21,9 @@ def readData():
             points = lines[11:]
 
             depth = (np.array([float(x.split(' ')[2]) for x in points])).reshape((h,w))
-            depth[depth!=depth]=0.18 # REMOVE NANS
+            depth[depth!=depth]= np.amax(depth) # REMOVE NANS
+
+
             depth = (depth *255. / np.max(depth)).astype(np.uint8) #NORMALIZE
             depth_image = Image.fromarray(depth)
 
