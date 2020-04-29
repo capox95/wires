@@ -6,6 +6,7 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/common/intersections.h>
 
 int main(int argc, char **argv)
 {
@@ -150,30 +151,72 @@ int main(int argc, char **argv)
         if (source_i->points[i].intensity != 1)
             source_i->points[i].z = 0;
     }
-
     /*
-    pcl::ExtractIndices<pcl::PointXYZI> extract;
-    extract.setInputCloud(source_i);
-    extract.setIndices(inliersUp);
-    extract.setNegative(true);
-    extract.filter(*source_wires);
+    std::vector<pcl::ModelCoefficients> lines;
+    bool flag_lines = false;
+    while (lines.size() < 2)
+    {
+        std::vector<int> indices_cloud;
+        for (int i = 0; i < source_i->size(); i++)
+        {
+            if (source_i->points[i].intensity == 0)
+                indices_cloud.push_back(i);
+        }
 
-    std::cout << "source wires size: " << source_wires->size() << std::endl;
+        // -- LINE FITTING -------------------------------------------------------------
+
+        pcl::ModelCoefficients line;
+        pcl::PointIndices::Ptr inliers_line(new pcl::PointIndices());
+        pcl::SACSegmentation<pcl::PointXYZI> segline;
+        segline.setOptimizeCoefficients(true);
+        segline.setModelType(pcl::SACMODEL_LINE);
+        segline.setMethodType(pcl::SAC_RANSAC);
+        segline.setMaxIterations(1000);
+        segline.setDistanceThreshold(0.005);
+
+        pcl::PointIndicesPtr seg_indices(new pcl::PointIndices);
+        seg_indices->indices = indices_cloud;
+        segline.setIndices(seg_indices);
+
+        segline.setInputCloud(source_i);
+        segline.segment(*inliers_line, line);
+
+        if (inliers->indices.size() == 0)
+            std::cerr << "Could not estimate a planar model for the given dataset." << std::endl;
+
+        // line with line intersaction da provare
+        for (int i = 0; i < inliers_line->indices.size(); i++)
+        {
+            if (lines.size() < 1)
+                source_i->points[inliers_line->indices[i]].intensity = 0.5;
+            else if (lines.size() < 3)
+                source_i->points[inliers_line->indices[i]].intensity = 0.7;
+            else
+                source_i->points[inliers_line->indices[i]].intensity = 0.5;
+        }
+        lines.push_back(line);
+    }
     */
 
-    std::cout << " computed!" << std::endl;
-    pcl::copyPointCloud(*source_i, *source);
+    //pcl::copyPointCloud(*source_i, *source);
+    //pcl::io::savePCDFile("new.pcd", *source);
 
-    pcl::io::savePCDFile("new.pcd", *source);
+    pcl::visualization::PCLVisualizer vizProcessed("PCL Processed Cloud");
+    vizProcessed.setBackgroundColor(1.0f, 1.0f, 1.0f);
+    //vizSource.addPointCloud<pcl::PointXYZ>(source, "source");
+    //vizSource.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.0f, 1.0f, 0.0f, "source");
+    pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity_distribution(source_i, "intensity");
+    vizProcessed.addPointCloud<pcl::PointXYZI>(source_i, intensity_distribution, "source_i");
+    vizProcessed.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "source_i");
 
     pcl::visualization::PCLVisualizer vizSource("PCL Source Cloud");
+    vizSource.addCoordinateSystem(0.05, "coordinate");
     vizSource.setBackgroundColor(1.0f, 1.0f, 1.0f);
     vizSource.addPointCloud<pcl::PointXYZ>(source, "source");
     vizSource.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.0f, 1.0f, 0.0f, "source");
-    pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> intensity_distribution(source_i, "intensity");
-    vizSource.addPointCloud<pcl::PointXYZI>(source_i, intensity_distribution, "source_i");
-    vizSource.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "source_i");
 
+    //for (int i = 0; i < lines.size(); i++)
+    //    vizSource.addLine(lines[i], "line" + std::to_string(i));
     //vizSource.addPointCloud<pcl::PointXYZI>(source_wires, "source_wires");
     //vizSource.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.5f, 0.0f, 1.0f, "source_wires");
 

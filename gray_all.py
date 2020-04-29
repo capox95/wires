@@ -1,11 +1,10 @@
 from PIL import Image
 import numpy as np
 import cv2
+import sys
 
-file_path = "new_dataset/"
-file_processed_dataset = "new_dataset_p/"
 
-def readData():
+def readData(file_path):
 
     with open(file_path+"test.txt", "r") as f:
         for line in f:
@@ -23,9 +22,13 @@ def readData():
             gray_image = Image.fromarray(gray)
            
             save_gray = np.array(gray_image)
-            filename_gray = file_processed_dataset+name[0]+"_gray.jpg"
+            filename_gray = file_path+name[0]+"_gray.jpg"
             cv2.imwrite(filename_gray, save_gray)
 
 
 if __name__ == "__main__":
-    readData()
+    if len(sys.argv) < 2:
+	print("file path expected!")
+
+    file_path = sys.argv[1]
+    readData(file_path)

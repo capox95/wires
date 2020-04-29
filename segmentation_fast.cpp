@@ -6,6 +6,8 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 
+#include <boost/algorithm/string.hpp>
+
 int main(int argc, char **argv)
 {
     if (argc < 1)
@@ -164,10 +166,14 @@ int main(int argc, char **argv)
                 source_i->points[i].z = 0;
         }
 
-        std::cout << str + " computed!" << std::endl;
+        std::vector<std::string> str_split;
+        boost::algorithm::split(str_split, str, boost::is_any_of("."));
+
+        std::string p_str = str_split[0] + "p." + str_split[1];
+        std::cout << p_str + " computed!" << std::endl;
         pcl::copyPointCloud(*source_i, *source);
 
-        pcl::io::savePCDFile(str, *source);
+        pcl::io::savePCDFile(dataset_folder + p_str, *source);
         /*
         pcl::visualization::PCLVisualizer vizSource("PCL Source Cloud");
         vizSource.setBackgroundColor(1.0f, 1.0f, 1.0f);

@@ -21,6 +21,8 @@ pcl/sample_consensus/model_types.h
 -
 pcl/segmentation/sac_segmentation.h
 -
+boost/algorithm/string.hpp
+-
 
 /usr/include/eigen3/Eigen/Cholesky
 Core
